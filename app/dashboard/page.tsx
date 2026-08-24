@@ -55,6 +55,67 @@ const NAMES = [
 
 const AVATAR_COLORS = ["bg-violet-600", "bg-emerald-600", "bg-rose-600", "bg-amber-600", "bg-sky-600", "bg-pink-600", "bg-indigo-600"];
 
+/* ---------------------------------------------------------------------------
+   Accent theme system
+
+   The whole UI's accent color (Connect Wallet button, active states, focus
+   rings, progress bars, toggles, etc.) is driven by the `accent` object
+   below, threaded down as a prop from MavoDashboard to every component that
+   renders an accent-colored element.
+
+   Each theme's color is an exact user-supplied hex value, so it can't be
+   mapped onto Tailwind's built-in color steps (those are fixed swatches,
+   not arbitrary hex). Since this environment only ships Tailwind's
+   predefined core classes (no JIT compiler for arbitrary bracket values
+   like bg-[#f0eb45]), the exact colors are applied via a small block of
+   real CSS (see <AccentStyle> below, rendered once near the root) that
+   targets a handful of static class names — accent-solid, accent-ring-70,
+   etc. Those class names are what components below actually reference;
+   only <AccentStyle> needs to know the real hex values.
+
+   Semantic colors (emerald/rose for gains vs losses, the healthy/careful/
+   suspicious risk meter) are intentionally left out of this system so they
+   keep meaning "good/bad" regardless of which accent theme is active.
+--------------------------------------------------------------------------- */
+
+const THEMES = {
+  yellow: { label: "Yellow", base: "#f0eb45", hover: "#f2ee63", active: "#cac53a", on: "#000000" },
+  darkblue: { label: "Dark Blue", base: "#526fff", hover: "#6e86ff", active: "#455dd6", on: "#ffffff" },
+  emerald: { label: "Emerald Green", base: "#038f45", hover: "#2ba163", active: "#03783a", on: "#ffffff" },
+  lightblue: { label: "Light Blue", base: "#cae5f2", hover: "#d2e9f4", active: "#aac0cb", on: "#000000" },
+  purple: { label: "Purple", base: "#412e67", hover: "#5f4f7f", active: "#372757", on: "#ffffff" },
+};
+
+function hexToRgb(hex) {
+  const h = hex.replace("#", "");
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)].join(", ");
+}
+
+// Renders the real CSS that backs the accent-* class names used throughout
+// the tree. Regenerates whenever the selected theme's hex values change.
+// This intentionally overrides Tailwind's own --tw-ring-color variable on
+// the same pseudo-states Tailwind's ring-2 utility already targets, so the
+// structural `ring-2` / `focus-visible:ring-2` classes keep working as-is —
+// only the color is swapped.
+function AccentStyle({ accent }) {
+  const rgb = hexToRgb(accent.base);
+  return (
+    <style>{`
+      .accent-solid { background-color: ${accent.base}; color: ${accent.on}; }
+      .accent-solid:hover { background-color: ${accent.hover}; }
+      .accent-solid:active { background-color: ${accent.active}; }
+      .accent-ring-70:focus-visible { --tw-ring-color: rgba(${rgb}, 0.7); }
+      .accent-ring-60:focus-visible { --tw-ring-color: rgba(${rgb}, 0.6); }
+      .accent-ring-50:focus { --tw-ring-color: rgba(${rgb}, 0.5); }
+      .accent-ring-50-within:focus-within { --tw-ring-color: rgba(${rgb}, 0.5); }
+      .accent-text { color: ${accent.base}; }
+      .accent-dot { background-color: ${accent.base}; }
+      .accent-bar { background-color: ${accent.base}; }
+      .accent-toggle-on { background-color: ${accent.base}; }
+    `}</style>
+  );
+}
+
 const PLATFORM_SETS = [
   ["Pump.fun", "PumpSwap"],
   ["Pump.fun", "PumpSwap", "Raydium"],
@@ -203,6 +264,18 @@ function SearchIcon({ className = "" }) {
     </svg>
   );
 }
+function GearIcon({ className = "" }) {
+  return (
+    <svg className={className} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="3" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1.08-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"
+      />
+    </svg>
+  );
+}
 function BackIcon({ className = "" }) {
   return (
     <svg className={className} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -243,6 +316,29 @@ function LightningIcon({ className = "" }) {
   return (
     <svg className={className} width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
       <path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" />
+    </svg>
+  );
+}
+function EyeOffIcon({ className = "" }) {
+  return (
+    <svg className={className} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M17.94 17.94A10.94 10.94 0 0112 20c-7 0-10-8-10-8a18.5 18.5 0 015.06-6.06M9.9 4.24A10.94 10.94 0 0112 4c7 0 10 8 10 8a18.5 18.5 0 01-2.16 3.19M14.12 14.12a3 3 0 11-4.24-4.24" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M1 1l22 22" strokeLinecap="round" />
+    </svg>
+  );
+}
+function BanIcon({ className = "" }) {
+  return (
+    <svg className={className} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M6 6l12 12" strokeLinecap="round" />
+    </svg>
+  );
+}
+function FilterIcon({ className = "" }) {
+  return (
+    <svg className={className} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M4 5h16M7 12h10M10 19h4" strokeLinecap="round" />
     </svg>
   );
 }
@@ -337,20 +433,38 @@ function PlatformBadges({ platforms }) {
 
 const QUICK_BUY_USD = 10; // preset amount used by the one-tap quick buy button
 
-function CoinCard({ token, onOpen, onQuickBuy }) {
+function CoinCard({ token, onOpen, onQuickBuy, onHide, onBlacklistDev, accent }) {
   const risk = RISK_META[riskLevel(token.riskScore)];
   const positive = token.priceChangePct >= 0;
 
   return (
-    <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-3 hover:border-zinc-700 hover:bg-zinc-900 transition-colors">
-      <button onClick={() => onOpen(token.id)} className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded-xl">
+    <div className="relative rounded-2xl border border-zinc-800 bg-zinc-950 p-3 hover:border-zinc-700 hover:bg-zinc-900 transition-colors">
+      <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
+        <button
+          onClick={(e) => { e.stopPropagation(); onHide(token.id); }}
+          title="Hide this coin"
+          aria-label={`Hide ${token.ticker}`}
+          className="p-1.5 rounded-lg bg-black/60 text-zinc-500 hover:text-zinc-200 hover:bg-black transition-colors"
+        >
+          <EyeOffIcon />
+        </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); onBlacklistDev(token.creator.wallet); }}
+          title="Blacklist this dev's wallet"
+          aria-label={`Blacklist the dev behind ${token.ticker}`}
+          className="p-1.5 rounded-lg bg-black/60 text-zinc-500 hover:text-rose-400 hover:bg-black transition-colors"
+        >
+          <BanIcon />
+        </button>
+      </div>
+      <button onClick={() => onOpen(token.id)} className={`w-full text-left focus-visible:outline-none focus-visible:ring-2 accent-ring-60 rounded-xl`}>
         <div className="flex items-start gap-2.5">
           <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 ${token.color}`}>
             {token.ticker.slice(0, 2)}
           </div>
 
           <div className="min-w-0 flex-1">
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center justify-between gap-2 pr-12">
               <div className="min-w-0">
                 <div className="flex items-baseline gap-1.5">
                   <span className="font-semibold text-sm text-zinc-100 font-mono truncate">{token.ticker}</span>
@@ -358,12 +472,12 @@ function CoinCard({ token, onOpen, onQuickBuy }) {
                 </div>
                 <span className="text-xs text-zinc-500">{fmtAge(token.ageMinutes)} old</span>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <Sparkline data={token.sparkline} positive={positive} />
-                <span className={`text-sm font-semibold font-mono ${positive ? "text-emerald-400" : "text-rose-400"}`}>
-                  {positive ? "+" : ""}{token.priceChangePct.toFixed(0)}%
-                </span>
-              </div>
+            </div>
+            <div className="flex items-center gap-2 mt-1">
+              <Sparkline data={token.sparkline} positive={positive} />
+              <span className={`text-sm font-semibold font-mono ${positive ? "text-emerald-400" : "text-rose-400"}`}>
+                {positive ? "+" : ""}{token.priceChangePct.toFixed(0)}%
+              </span>
             </div>
 
             <div className={`mt-2 inline-flex items-center gap-1.5 rounded-lg px-2 py-0.5 text-xs font-medium ${risk.bg} ${risk.text}`}>
@@ -384,7 +498,7 @@ function CoinCard({ token, onOpen, onQuickBuy }) {
       <button
         onClick={() => onQuickBuy(token)}
         aria-label={`Quick buy $${QUICK_BUY_USD} of ${token.ticker}`}
-        className="mt-2.5 w-full flex items-center justify-center gap-1.5 py-2.5 rounded-full bg-white hover:bg-zinc-100 active:bg-zinc-200 transition-colors text-black text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+        className={`mt-2.5 w-full flex items-center justify-center gap-1.5 py-2.5 rounded-full accent-solid transition-colors text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 accent-ring-70 focus-visible:ring-offset-2 focus-visible:ring-offset-black`}
       >
         <LightningIcon />
         Quick Buy · ${QUICK_BUY_USD}
@@ -397,65 +511,117 @@ function CoinCard({ token, onOpen, onQuickBuy }) {
    Discover column
 --------------------------------------------------------------------------- */
 
-const SORTS = [
-  { id: "new", label: "Newest" },
-  { id: "volume", label: "Volume" },
-  { id: "mcap", label: "Mcap" },
-];
-
-function ColumnPanel({ title, live, tokens, onOpen, onQuickBuy }) {
-  const [query, setQuery] = useState("");
-  const [sort, setSort] = useState("new");
+function TokenListPage({ title, tokens, onOpen, onQuickBuy, query, hiddenTokenIds, blacklistedDevWallets, onHide, onBlacklistDev, accent }) {
   const [safeOnly, setSafeOnly] = useState(false);
 
   const filtered = useMemo(() => {
-    let list = tokens.filter((t) => (query.trim() === "" ? true : (t.ticker + t.name).toLowerCase().includes(query.toLowerCase())));
+    let list = tokens.filter((t) => !hiddenTokenIds.has(t.id) && !blacklistedDevWallets.has(t.creator.wallet));
+    list = list.filter((t) => (query.trim() === "" ? true : (t.ticker + t.name).toLowerCase().includes(query.toLowerCase())));
     if (safeOnly) list = list.filter((t) => t.riskScore < 70);
-    list = [...list].sort((a, b) => {
-      if (sort === "volume") return b.volume24h - a.volume24h;
-      if (sort === "mcap") return b.marketCap - a.marketCap;
-      return a.ageMinutes - b.ageMinutes;
-    });
+    // No exposed sort control — each list defaults to whatever ordering
+    // fits its purpose (freshest first for Trenches, highest volume first
+    // for Trending).
+    list = [...list].sort((a, b) => (title === "Trenches" ? a.ageMinutes - b.ageMinutes : b.volume24h - a.volume24h));
     return list;
-  }, [tokens, query, sort, safeOnly]);
+  }, [tokens, query, safeOnly, title, hiddenTokenIds, blacklistedDevWallets]);
 
   return (
-    <div className="flex flex-col rounded-2xl border border-zinc-800 bg-zinc-950 min-w-0 h-full">
-      <div className="p-3 border-b border-zinc-800">
-        <div className="flex items-center gap-2">
-          <h2 className="font-semibold text-base text-zinc-100" style={{ fontFamily: '"Fredoka", sans-serif' }}>{title}</h2>
-          {live && <span className="flex items-center gap-1 text-[10px] text-zinc-500 font-medium"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> live</span>}
-          <span className="ml-auto text-xs text-zinc-500">{filtered.length}</span>
+    <div>
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <div>
+          <h1 className="text-2xl font-semibold text-zinc-100" style={{ fontFamily: '"Fredoka", sans-serif' }}>{title}</h1>
+          <p className="text-xs text-zinc-500">Find a coin, check the risk, enter an amount, buy — all without leaving Mavo. Mock data for now.</p>
         </div>
+        <button
+          onClick={() => setSafeOnly((v) => !v)}
+          className={`shrink-0 px-4 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+            safeOnly ? "bg-emerald-950 text-emerald-400" : "bg-zinc-900 text-zinc-500 hover:text-zinc-300"
+          }`}
+        >
+          🟢 Safer only
+        </button>
+      </div>
 
-        <div className="mt-2 relative">
-          <SearchIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search"
-            className="w-full rounded-xl border border-zinc-800 bg-black pl-8 pr-3 py-1.5 text-xs text-zinc-100 placeholder-zinc-600 outline-none focus:ring-2 focus:ring-white/50 transition-shadow"
-          />
+      {filtered.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {filtered.map((t) => <CoinCard key={t.id} token={t} onOpen={onOpen} onQuickBuy={onQuickBuy} onHide={onHide} onBlacklistDev={onBlacklistDev} accent={accent} />)}
         </div>
+      ) : (
+        <div className="text-center text-sm text-zinc-500 py-16">No results match your search.</div>
+      )}
+    </div>
+  );
+}
 
-        <div className="mt-2 flex items-center gap-1.5 flex-wrap">
-          {SORTS.map((s) => (
-            <button key={s.id} onClick={() => setSort(s.id)} className={`px-2 py-1 rounded-lg text-xs font-medium transition-colors ${sort === s.id ? "bg-zinc-800 text-zinc-100" : "text-zinc-500 hover:text-zinc-300"}`}>
-              {s.label}
-            </button>
-          ))}
-          <button onClick={() => setSafeOnly((v) => !v)} className={`ml-auto px-2 py-1 rounded-lg text-xs font-medium transition-colors ${safeOnly ? "bg-emerald-950 text-emerald-400" : "text-zinc-500 hover:text-zinc-300"}`}>
+/* ---------------------------------------------------------------------------
+   Trenches — split into New / Soon / Migrated sections, each with its own
+   filter toggle and independently filtered/sorted token list.
+--------------------------------------------------------------------------- */
+
+function TrenchSection({ label, tokens, onOpen, onQuickBuy, query, hiddenTokenIds, blacklistedDevWallets, onHide, onBlacklistDev, sortBy, accent }) {
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [safeOnly, setSafeOnly] = useState(false);
+
+  const filtered = useMemo(() => {
+    let list = tokens.filter((t) => !hiddenTokenIds.has(t.id) && !blacklistedDevWallets.has(t.creator.wallet));
+    list = list.filter((t) => (query.trim() === "" ? true : (t.ticker + t.name).toLowerCase().includes(query.toLowerCase())));
+    if (safeOnly) list = list.filter((t) => t.riskScore < 70);
+    list = [...list].sort(sortBy);
+    return list;
+  }, [tokens, query, safeOnly, hiddenTokenIds, blacklistedDevWallets, sortBy]);
+
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-3">
+        <h2 className="font-semibold text-lg text-zinc-100" style={{ fontFamily: '"Fredoka", sans-serif' }}>{label}</h2>
+        <span className="text-xs text-zinc-500">{filtered.length}</span>
+        <button
+          onClick={() => setFiltersOpen((v) => !v)}
+          className={`ml-auto flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+            filtersOpen || safeOnly ? "bg-zinc-800 text-zinc-100" : "text-zinc-500 hover:text-zinc-300"
+          }`}
+        >
+          <FilterIcon />
+          Filters
+        </button>
+      </div>
+
+      {filtersOpen && (
+        <div className="mb-3 flex items-center gap-2">
+          <button
+            onClick={() => setSafeOnly((v) => !v)}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+              safeOnly ? "bg-emerald-950 text-emerald-400" : "bg-zinc-900 text-zinc-500 hover:text-zinc-300"
+            }`}
+          >
             🟢 Safer only
           </button>
         </div>
-      </div>
+      )}
 
-      <div className="flex-1 overflow-y-auto p-2 space-y-2 max-h-[75vh]">
-        {filtered.length > 0 ? (
-          filtered.map((t) => <CoinCard key={t.id} token={t} onOpen={onOpen} onQuickBuy={onQuickBuy} />)
-        ) : (
-          <div className="text-center text-xs text-zinc-500 py-10">No tokens match.</div>
-        )}
+      {filtered.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+          {filtered.map((t) => <CoinCard key={t.id} token={t} onOpen={onOpen} onQuickBuy={onQuickBuy} onHide={onHide} onBlacklistDev={onBlacklistDev} accent={accent} />)}
+        </div>
+      ) : (
+        <div className="text-center text-sm text-zinc-500 py-10 rounded-2xl border border-dashed border-zinc-800">No coins match right now.</div>
+      )}
+    </div>
+  );
+}
+
+function TrenchesPage({ newTokens, soonTokens, migratedTokens, onOpen, onQuickBuy, query, hiddenTokenIds, blacklistedDevWallets, onHide, onBlacklistDev, accent }) {
+  const sharedProps = { onOpen, onQuickBuy, query, hiddenTokenIds, blacklistedDevWallets, onHide, onBlacklistDev, accent };
+  return (
+    <div>
+      <div className="mb-5">
+        <h1 className="text-2xl font-semibold text-zinc-100" style={{ fontFamily: '"Fredoka", sans-serif' }}>Trenches</h1>
+        <p className="text-xs text-zinc-500">Fresh pairs, sorted into New, Soon, and Migrated. Mock data for now.</p>
+      </div>
+      <div className="space-y-8">
+        <TrenchSection label="New" tokens={newTokens} sortBy={(a, b) => a.ageMinutes - b.ageMinutes} {...sharedProps} />
+        <TrenchSection label="Soon" tokens={soonTokens} sortBy={(a, b) => b.migrationPct - a.migrationPct} {...sharedProps} />
+        <TrenchSection label="Migrated" tokens={migratedTokens} sortBy={(a, b) => b.volume24h - a.volume24h} {...sharedProps} />
       </div>
     </div>
   );
@@ -469,7 +635,7 @@ function ColumnPanel({ title, live, tokens, onOpen, onQuickBuy }) {
    wallet's own extension/app, Mavo never sees key material.
 --------------------------------------------------------------------------- */
 
-function WalletConnectModal({ onClose, onConnected }) {
+function WalletConnectModal({ onClose, onConnected, accent }) {
   const [connectingId, setConnectingId] = useState(null);
   const wallets = [
     { id: "phantom", name: "Phantom" },
@@ -507,7 +673,7 @@ function WalletConnectModal({ onClose, onConnected }) {
               className="w-full flex items-center justify-between rounded-xl border border-zinc-800 bg-black hover:bg-zinc-900 transition-colors px-3.5 py-3 disabled:opacity-50"
             >
               <span className="text-sm font-medium text-zinc-100">{w.name}</span>
-              {connectingId === w.id ? <SpinnerIcon className="text-white" /> : <span className="text-xs text-zinc-500">Connect</span>}
+              {connectingId === w.id ? <SpinnerIcon className="accent-text" /> : <span className="text-xs text-zinc-500">Connect</span>}
             </button>
           ))}
         </div>
@@ -528,28 +694,24 @@ function WalletConnectModal({ onClose, onConnected }) {
         confirmation; show the real transaction signature/explorer link
 --------------------------------------------------------------------------- */
 
-function TradeModal({ token, side: initialSide, wallet, onClose, quick = false }) {
+function TradeModal({ token, side: initialSide, wallet, onClose, quick = false, paper = false, paperWallet, paperBuy, paperSell, accent }) {
   const [side, setSide] = useState(initialSide);
   const [amount, setAmount] = useState(quick ? String(QUICK_BUY_USD) : "");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [step, setStep] = useState(quick ? "signing" : "review"); // review -> signing -> success
-
-  // Quick buy skips the review screen entirely — one tap goes straight to
-  // simulated signing with the preset amount. REPLACE WITH REAL: this is
-  // still the same wallet-adapter signing step as the regular flow, just
-  // triggered immediately instead of after a manual confirm click.
-  useEffect(() => {
-    if (quick) {
-      const t = setTimeout(() => setStep("success"), 1400);
-      return () => clearTimeout(t);
-    }
-  }, [quick]);
+  const [result, setResult] = useState(null); // filled in on paper trades: { pnlSol, pnlPct } for a sell
 
   const risk = RISK_META[riskLevel(token.riskScore)];
   const numericAmount = parseFloat(amount) || 0;
 
+  // Practice mode trades against the separate paper wallet/position for this
+  // token instead of the static per-token mock holding used for the (also
+  // mock) real-wallet flow.
+  const paperPosition = paper ? paperWallet?.positions?.[token.id] : null;
+  const holdingTokens = paper ? (paperPosition ? paperPosition.tokensHeld : 0) : token.mockHoldingTokens;
+
   const paySol = side === "buy" ? numericAmount / SOL_PRICE_USD : null;
-  const sellTokens = side === "sell" ? (token.mockHoldingTokens * numericAmount) / 100 : null;
+  const sellTokens = side === "sell" ? (holdingTokens * numericAmount) / 100 : null;
   const receiveTokens = side === "buy" && numericAmount > 0
     ? (numericAmount / token.price) * (1 - token.priceImpactPct / 100)
     : null;
@@ -558,17 +720,54 @@ function TradeModal({ token, side: initialSide, wallet, onClose, quick = false }
     : null;
 
   const presets = side === "buy" ? ["$5", "$10", "$25", "$50"] : ["25", "50", "75", "100"];
-  const canSubmit = numericAmount > 0 && (side === "buy" || token.mockHoldingTokens > 0);
+  const overPaperBalance = paper && side === "buy" && paySol !== null && paySol > (paperWallet?.balanceSol ?? 0);
+  const canSubmit = numericAmount > 0 && (side === "buy" ? !overPaperBalance : holdingTokens > 0);
 
   function handlePresetClick(p) {
     setAmount(p.replace(/[^0-9.]/g, ""));
   }
 
+  // Runs the trade against the practice wallet's real balance/position math.
+  // No-op for the real-wallet flow, which stays a pure visual simulation.
+  // REPLACE WITH REAL: for the real-wallet path this is where the built
+  // transaction gets sent to the wallet adapter for signing.
+  function executeTrade() {
+    if (!paper) return;
+    if (side === "buy" && numericAmount > 0) {
+      paperBuy(token, numericAmount);
+    } else if (side === "sell" && numericAmount > 0) {
+      const costBasisSold = (paperPosition?.costBasisSol ?? 0) * (numericAmount / 100);
+      const proceeds = receiveSol ?? 0;
+      const pnlSol = proceeds - costBasisSold;
+      const pnlPct = costBasisSold > 0 ? (pnlSol / costBasisSold) * 100 : 0;
+      setResult({ pnlSol, pnlPct });
+      paperSell(token, numericAmount);
+    }
+  }
+
+  // Quick buy skips the review screen entirely — one tap goes straight to
+  // simulated signing with the preset amount. REPLACE WITH REAL: this is
+  // still the same wallet-adapter signing step as the regular flow, just
+  // triggered immediately instead of after a manual confirm click.
+  useEffect(() => {
+    if (quick) {
+      const t = setTimeout(() => {
+        executeTrade();
+        setStep("success");
+      }, 1400);
+      return () => clearTimeout(t);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quick]);
+
   function handleConfirm() {
     setStep("signing");
     // REPLACE WITH REAL: request signature from the wallet adapter, then
     // submit the signed transaction and wait for on-chain confirmation.
-    setTimeout(() => setStep("success"), 1400);
+    setTimeout(() => {
+      executeTrade();
+      setStep("success");
+    }, 1400);
   }
 
   return (
@@ -582,6 +781,9 @@ function TradeModal({ token, side: initialSide, wallet, onClose, quick = false }
                   {token.ticker.slice(0, 2)}
                 </div>
                 <span className="text-sm font-semibold text-zinc-100 font-mono">{token.ticker}</span>
+                {paper && (
+                  <span className="text-[10px] font-semibold text-zinc-300 bg-zinc-800 rounded-full px-2 py-0.5">Practice</span>
+                )}
               </div>
               <button onClick={onClose} className="text-zinc-500 hover:text-zinc-200"><CloseIcon /></button>
             </div>
@@ -591,14 +793,14 @@ function TradeModal({ token, side: initialSide, wallet, onClose, quick = false }
               <button onClick={() => setSide("sell")} className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${side === "sell" ? "bg-rose-950 text-rose-400" : "text-zinc-500"}`}>Sell</button>
             </div>
 
-            {side === "sell" && token.mockHoldingTokens === 0 ? (
+            {side === "sell" && holdingTokens === 0 ? (
               <div className="rounded-xl border border-zinc-800 bg-black p-3 text-xs text-zinc-500 mb-4">
-                You don&apos;t hold any {token.ticker} in this wallet yet.
+                You don&apos;t hold any {token.ticker} in {paper ? "your practice wallet" : "this wallet"} yet.
               </div>
             ) : (
               <>
                 <label className="text-xs text-zinc-500 uppercase tracking-wide">{side === "buy" ? "Amount (USD)" : "Amount (% of your position)"}</label>
-                <div className="mt-1.5 flex items-center rounded-xl border border-zinc-800 bg-black px-3 py-2.5 focus-within:ring-2 focus-within:ring-white/50">
+                <div className={`mt-1.5 flex items-center rounded-xl border border-zinc-800 bg-black px-3 py-2.5 focus-within:ring-2 accent-ring-50-within`}>
                   <span className="text-zinc-500 mr-1.5">{side === "buy" ? "$" : ""}</span>
                   <input
                     value={amount}
@@ -610,7 +812,10 @@ function TradeModal({ token, side: initialSide, wallet, onClose, quick = false }
                   {side === "sell" && <span className="text-zinc-500 ml-1.5">%</span>}
                 </div>
                 {side === "sell" && (
-                  <div className="mt-1 text-[11px] text-zinc-600">You hold ~{fmtTokenAmount(token.mockHoldingTokens)} {token.ticker}</div>
+                  <div className="mt-1 text-[11px] text-zinc-600">You hold ~{fmtTokenAmount(holdingTokens)} {token.ticker}</div>
+                )}
+                {side === "buy" && paper && (
+                  <div className="mt-1 text-[11px] text-zinc-600">Practice balance: {(paperWallet?.balanceSol ?? 0).toFixed(3)} SOL</div>
                 )}
 
                 <div className="grid grid-cols-4 gap-1.5 mt-2">
@@ -669,7 +874,9 @@ function TradeModal({ token, side: initialSide, wallet, onClose, quick = false }
                   {side === "buy" ? `Buy ${token.ticker}` : `Sell ${token.ticker}`}
                 </button>
                 <p className="mt-2 text-center text-[11px] text-zinc-600">
-                  You&apos;ll be asked to approve this in {wallet ? "your connected wallet" : "your wallet"} — Mavo never holds your funds.
+                  {paper
+                    ? "This trade uses your separate practice balance — no real funds are involved."
+                    : `You'll be asked to approve this in ${wallet ? "your connected wallet" : "your wallet"} — Mavo never holds your funds.`}
                 </p>
               </>
             )}
@@ -678,9 +885,13 @@ function TradeModal({ token, side: initialSide, wallet, onClose, quick = false }
 
         {step === "signing" && (
           <div className="py-8 flex flex-col items-center text-center">
-            <SpinnerIcon className="text-white mb-4" />
-            <div className="text-sm font-semibold text-zinc-100">Waiting for wallet approval</div>
-            <p className="text-xs text-zinc-500 mt-1 max-w-[220px]">Simulated for this prototype — a real build would prompt your wallet extension to sign the transaction now.</p>
+            <SpinnerIcon className={`accent-text mb-4`} />
+            <div className="text-sm font-semibold text-zinc-100">{paper ? "Placing practice trade" : "Waiting for wallet approval"}</div>
+            <p className="text-xs text-zinc-500 mt-1 max-w-[220px]">
+              {paper
+                ? "Running this against your practice balance."
+                : "Simulated for this prototype — a real build would prompt your wallet extension to sign the transaction now."}
+            </p>
           </div>
         )}
 
@@ -689,16 +900,25 @@ function TradeModal({ token, side: initialSide, wallet, onClose, quick = false }
             <div className="w-11 h-11 rounded-full bg-emerald-950 text-emerald-400 flex items-center justify-center mb-3">
               <CheckIcon />
             </div>
-            <div className="text-sm font-semibold text-zinc-100">Simulated trade complete</div>
+            <div className="text-sm font-semibold text-zinc-100">{paper ? "Practice trade complete" : "Simulated trade complete"}</div>
             {quick && (
               <p className="text-xs text-zinc-400 mt-1">Quick bought ${QUICK_BUY_USD} of {token.ticker}</p>
             )}
+            {paper && side === "sell" && result && (
+              <p className={`text-sm font-semibold mt-1 ${result.pnlSol >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                {result.pnlSol >= 0 ? "+" : ""}{result.pnlSol.toFixed(4)} SOL ({result.pnlPct >= 0 ? "+" : ""}{result.pnlPct.toFixed(1)}%)
+              </p>
+            )}
             <p className="text-xs text-zinc-500 mt-1 max-w-[240px]">
-              This prototype did not send a real transaction. A finished build would show the real transaction signature and an explorer link here.
+              {paper
+                ? "This was a practice trade — your practice balance and position were updated, but no real funds moved."
+                : "This prototype did not send a real transaction. A finished build would show the real transaction signature and an explorer link here."}
             </p>
-            <div className="mt-3 w-full rounded-xl border border-dashed border-zinc-800 bg-black px-3 py-2 text-[11px] font-mono text-zinc-500 truncate">
-              MOCK_TX_SIGNATURE_NOT_REAL
-            </div>
+            {!paper && (
+              <div className="mt-3 w-full rounded-xl border border-dashed border-zinc-800 bg-black px-3 py-2 text-[11px] font-mono text-zinc-500 truncate">
+                MOCK_TX_SIGNATURE_NOT_REAL
+              </div>
+            )}
             <button onClick={onClose} className="mt-4 w-full py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-100 text-sm font-medium transition-colors">
               Done
             </button>
@@ -734,7 +954,7 @@ function ComingSoonPanel({ title, description }) {
   );
 }
 
-function QuickTrade({ token, wallet, onTrade }) {
+function QuickTrade({ token, wallet, onTrade, paperMode, paperWallet }) {
   return (
     <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
       <div className="text-xs text-zinc-500 uppercase tracking-wide mb-3">Trade</div>
@@ -747,13 +967,15 @@ function QuickTrade({ token, wallet, onTrade }) {
         </button>
       </div>
       <p className="mt-3 text-[11px] text-zinc-600 text-center">
-        {wallet ? `Connected: ${wallet.address}` : "You'll be asked to connect a wallet first."}
+        {paperMode
+          ? `Practice mode — balance: ${(paperWallet?.balanceSol ?? 0).toFixed(3)} SOL`
+          : wallet ? `Connected: ${wallet.address}` : "You'll be asked to connect a wallet first."}
       </p>
     </div>
   );
 }
 
-function TokenDetail({ token, wallet, onBack, onTrade }) {
+function TokenDetail({ token, wallet, onBack, onTrade, paperMode, paperWallet, backLabel = "Trending", accent }) {
   const risk = RISK_META[riskLevel(token.riskScore)];
   const stageLabel = token.stage === "new" ? "New pair" : token.stage === "migrating" ? "Migrating" : "Migrated";
 
@@ -761,7 +983,7 @@ function TokenDetail({ token, wallet, onBack, onTrade }) {
     <div>
       <button onClick={onBack} className="inline-flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-200 mb-4 transition-colors">
         <BackIcon />
-        Back to Discover
+        Back to {backLabel}
       </button>
 
       <div className="flex items-start justify-between gap-3 mb-5 flex-wrap">
@@ -808,7 +1030,7 @@ function TokenDetail({ token, wallet, onBack, onTrade }) {
                 <span className="text-xs font-medium text-zinc-100">{stageLabel}</span>
               </div>
               <div className="h-1.5 rounded-full bg-zinc-800 overflow-hidden">
-                <div className="h-full bg-white" style={{ width: `${token.migrationPct}%` }} />
+                <div className={`h-full accent-bar`} style={{ width: `${token.migrationPct}%` }} />
               </div>
               <div className="mt-1.5 text-xs text-zinc-500">{token.migrationPct}% to full migration</div>
             </div>
@@ -837,7 +1059,7 @@ function TokenDetail({ token, wallet, onBack, onTrade }) {
                   <div key={h.label} className="flex items-center gap-3">
                     <span className="text-xs text-zinc-400 w-32 shrink-0">{h.label}</span>
                     <div className="flex-1 h-1.5 rounded-full bg-zinc-800 overflow-hidden">
-                      <div className="h-full bg-white" style={{ width: `${Math.min(100, h.pct * 2.2)}%` }} />
+                      <div className={`h-full accent-bar`} style={{ width: `${Math.min(100, h.pct * 2.2)}%` }} />
                     </div>
                     <span className="text-xs font-mono text-zinc-300 w-10 text-right">{h.pct.toFixed(1)}%</span>
                   </div>
@@ -862,8 +1084,199 @@ function TokenDetail({ token, wallet, onBack, onTrade }) {
         </div>
 
         <div className="min-w-0 xl:sticky xl:top-20 xl:self-start">
-          <QuickTrade token={token} wallet={wallet} onTrade={onTrade} />
+          <QuickTrade token={token} wallet={wallet} onTrade={onTrade} paperMode={paperMode} paperWallet={paperWallet} />
         </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------------------
+   Practice mode — separate paper wallet with its own balance, positions,
+   and trade history. Buys/sells here run real arithmetic against mock
+   token prices (average-cost basis for P&L) so the stats below are
+   genuinely derived, not decorative placeholders.
+--------------------------------------------------------------------------- */
+
+function ToggleSwitch({ checked, onChange, accent }) {
+  return (
+    <button
+      onClick={() => onChange(!checked)}
+      aria-pressed={checked}
+      className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 accent-ring-70 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
+        checked ? "accent-toggle-on" : "bg-zinc-800"
+      }`}
+    >
+      <span
+        className={`inline-block h-5 w-5 transform rounded-full transition-transform ${
+          checked ? "translate-x-6 bg-black" : "translate-x-1 bg-zinc-400"
+        }`}
+      />
+    </button>
+  );
+}
+
+function MiniEquityCurve({ points, positive }) {
+  const w = 260, h = 56;
+  if (points.length < 2) {
+    return <div className="h-14 flex items-center text-[11px] text-zinc-600">No practice trades yet</div>;
+  }
+  const values = points.map((p) => p.equity);
+  const min = Math.min(...values), max = Math.max(...values);
+  const range = max - min || 1;
+  const path = points.map((p, i) => `${(i / (points.length - 1)) * w},${h - ((p.equity - min) / range) * (h - 8) - 4}`).join(" L ");
+  const stroke = positive ? "#34d399" : "#fb7185";
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-14" preserveAspectRatio="none">
+      <path d={`M ${path} L ${w},${h} L 0,${h} Z`} fill={stroke} opacity="0.12" stroke="none" />
+      <path d={`M ${path}`} fill="none" stroke={stroke} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function PaperTradingPage({ paperMode, onTogglePaperMode, paperWallet, onFundWallet, accent }) {
+  const [fundInput, setFundInput] = useState(String(paperWallet.startingBalanceSol));
+
+  const stats = useMemo(() => {
+    const positions = Object.entries(paperWallet.positions);
+    const openCount = positions.length;
+    const equity = paperWallet.balanceSol + positions.reduce((sum, [id, p]) => {
+      const tok = MOCK_TOKENS.find((t) => t.id === id);
+      return sum + (tok ? (p.tokensHeld * tok.price) / SOL_PRICE_USD : 0);
+    }, 0);
+    const rounds = paperWallet.trades.filter((t) => t.side === "sell");
+    const realizedPnl = rounds.reduce((sum, r) => sum + r.pnlSol, 0);
+    const wins = rounds.filter((r) => r.pnlSol > 0).length;
+    const winRate = rounds.length > 0 ? (wins / rounds.length) * 100 : 0;
+    const bestRound = rounds.length > 0 ? rounds.reduce((a, b) => (b.pnlSol > a.pnlSol ? b : a)) : null;
+    const worstRound = rounds.length > 0 ? rounds.reduce((a, b) => (b.pnlSol < a.pnlSol ? b : a)) : null;
+    const equityChangeSol = equity - paperWallet.startingBalanceSol;
+    const equityChangePct = paperWallet.startingBalanceSol > 0 ? (equityChangeSol / paperWallet.startingBalanceSol) * 100 : 0;
+    return { openCount, equity, rounds, realizedPnl, winRate, bestRound, worstRound, equityChangeSol, equityChangePct };
+  }, [paperWallet]);
+
+  function handleFund() {
+    const val = parseFloat(fundInput);
+    if (!isNaN(val) && val > 0) onFundWallet(val);
+  }
+
+  return (
+    <div className="max-w-5xl mx-auto">
+      <div className="mb-4">
+        <h1 className="text-2xl font-semibold text-zinc-100" style={{ fontFamily: '"Fredoka", sans-serif' }}>Paper Trading</h1>
+        <p className="text-xs text-zinc-500">Practice with a separate balance before risking real funds. Nothing here touches your connected wallet.</p>
+      </div>
+
+      <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4 mb-4 flex flex-col sm:flex-row sm:items-center gap-4">
+        <div className="flex items-center gap-3">
+          <ToggleSwitch checked={paperMode} onChange={onTogglePaperMode} accent={accent} />
+          <div>
+            <div className="text-sm font-semibold text-zinc-100">Practice Mode</div>
+            <div className="text-xs text-zinc-500">{paperMode ? "On — Discover, Quick Buy, and trades use your practice balance" : "Off — Discover and trades use your connected wallet"}</div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 sm:ml-auto">
+          <div className={`flex items-center rounded-xl border border-zinc-800 bg-black px-3 py-2 focus-within:ring-2 accent-ring-50-within`}>
+            <input
+              value={fundInput}
+              onChange={(e) => setFundInput(e.target.value.replace(/[^0-9.]/g, ""))}
+              className="bg-transparent outline-none w-20 text-sm font-mono text-zinc-100"
+            />
+            <span className="text-xs text-zinc-500 ml-1.5">SOL</span>
+          </div>
+          <button onClick={handleFund} className={`px-4 py-2 rounded-xl accent-solid transition-colors text-sm font-semibold whitespace-nowrap`}>
+            Reset & Fund
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
+          <div className="text-xs text-zinc-500 uppercase tracking-wide">Practice Equity</div>
+          <div className="mt-1 flex items-baseline gap-2">
+            <span className="text-2xl font-semibold text-zinc-100 font-mono tabular-nums">{stats.equity.toFixed(3)}</span>
+            <span className="text-xs text-zinc-500">SOL</span>
+          </div>
+          <div className={`text-xs font-medium ${stats.equityChangeSol >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+            {stats.equityChangeSol >= 0 ? "+" : ""}{stats.equityChangeSol.toFixed(3)} SOL ({stats.equityChangePct >= 0 ? "+" : ""}{stats.equityChangePct.toFixed(1)}%)
+          </div>
+          <div className="mt-2">
+            <MiniEquityCurve points={paperWallet.equityHistory} positive={stats.equityChangeSol >= 0} />
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
+          <div className="text-xs text-zinc-500 uppercase tracking-wide">Realized P&amp;L</div>
+          <div className={`mt-1 text-2xl font-semibold font-mono tabular-nums ${stats.realizedPnl >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+            {stats.realizedPnl >= 0 ? "+" : ""}{stats.realizedPnl.toFixed(3)}
+          </div>
+          <div className="text-xs text-zinc-500">{stats.rounds.length} closed round{stats.rounds.length === 1 ? "" : "s"}</div>
+        </div>
+
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
+          <div className="text-xs text-zinc-500 uppercase tracking-wide">Win Rate</div>
+          <div className="mt-1 text-2xl font-semibold text-zinc-100 font-mono tabular-nums">{stats.rounds.length > 0 ? `${stats.winRate.toFixed(0)}%` : "—"}</div>
+          <div className="h-1.5 rounded-full bg-zinc-800 overflow-hidden mt-2">
+            <div className="h-full bg-emerald-500" style={{ width: `${stats.winRate}%` }} />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
+          <div className="text-xs text-zinc-500 uppercase tracking-wide">Open / Rounds</div>
+          <div className="mt-1 text-2xl font-semibold text-zinc-100 font-mono tabular-nums">{stats.openCount} / {stats.rounds.length}</div>
+        </div>
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
+          <div className="text-xs text-zinc-500 uppercase tracking-wide">Best Round</div>
+          {stats.bestRound ? (
+            <>
+              <div className="mt-1 text-lg font-semibold font-mono text-emerald-400">+{stats.bestRound.pnlSol.toFixed(3)} SOL</div>
+              <div className="text-xs text-zinc-500">{stats.bestRound.ticker} · +{stats.bestRound.pnlPct.toFixed(1)}%</div>
+            </>
+          ) : (
+            <div className="mt-1 text-sm text-zinc-600">No closed rounds yet</div>
+          )}
+        </div>
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
+          <div className="text-xs text-zinc-500 uppercase tracking-wide">Worst Round</div>
+          {stats.worstRound ? (
+            <>
+              <div className={`mt-1 text-lg font-semibold font-mono ${stats.worstRound.pnlSol >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                {stats.worstRound.pnlSol >= 0 ? "+" : ""}{stats.worstRound.pnlSol.toFixed(3)} SOL
+              </div>
+              <div className="text-xs text-zinc-500">{stats.worstRound.ticker} · {stats.worstRound.pnlPct >= 0 ? "+" : ""}{stats.worstRound.pnlPct.toFixed(1)}%</div>
+            </>
+          ) : (
+            <div className="mt-1 text-sm text-zinc-600">No closed rounds yet</div>
+          )}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
+        <div className="text-xs text-zinc-500 uppercase tracking-wide mb-3">Recent Round Trips</div>
+        {stats.rounds.length === 0 ? (
+          <div className="text-center text-xs text-zinc-500 py-8">Sell part of a practice position to log your first round trip.</div>
+        ) : (
+          <div className="space-y-2">
+            {stats.rounds.slice(0, 8).map((r) => (
+              <div key={r.id} className="flex items-center justify-between py-2 border-b border-zinc-900 last:border-0">
+                <div>
+                  <div className="text-sm font-semibold text-zinc-100 font-mono">{r.ticker}</div>
+                  <div className="text-xs text-zinc-500">{fmtAge(Math.max(1, Math.round((Date.now() - r.timestamp) / 60000)))} ago</div>
+                </div>
+                <div className="text-right">
+                  <div className={`text-sm font-semibold font-mono ${r.pnlSol >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                    {r.pnlSol >= 0 ? "+" : ""}{r.pnlSol.toFixed(4)} SOL
+                  </div>
+                  <div className={`text-xs ${r.pnlSol >= 0 ? "text-emerald-400/70" : "text-rose-400/70"}`}>
+                    {r.pnlPct >= 0 ? "+" : ""}{r.pnlPct.toFixed(1)}%
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -873,13 +1286,68 @@ function TokenDetail({ token, wallet, onBack, onTrade }) {
    Top navigation
 --------------------------------------------------------------------------- */
 
-const NAV_ITEMS = ["Discover", "Paper Trading", "Portfolio", "Rewards", "Trackers"];
+const NAV_ITEMS = ["Trending", "Trenches", "Paper Trading", "Portfolio", "Rewards", "Trackers"];
 
-function TopNav({ activeNav, onNavChange, wallet, onOpenWalletModal }) {
+function ThemeSwitcher({ theme, onThemeChange }) {
+  const [open, setOpen] = useState(false);
+  const accent = THEMES[theme] ?? THEMES.yellow;
+
+  // Close the popover on outside click / Escape, same pattern as a native <select>.
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e) {
+      if (!e.target.closest?.("[data-theme-switcher]")) setOpen(false);
+    }
+    function handleKey(e) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [open]);
+
+  return (
+    <div className="relative" data-theme-switcher>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        aria-label="Theme settings"
+        aria-expanded={open}
+        className={`flex items-center justify-center w-9 h-9 rounded-full border border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-zinc-100 hover:border-zinc-700 transition-colors focus-visible:outline-none focus-visible:ring-2 accent-ring-60`}
+      >
+        <GearIcon />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 mt-2 w-48 rounded-xl border border-zinc-800 bg-zinc-950 shadow-xl shadow-black/50 p-1.5 z-30">
+          <div className="px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">Accent color</div>
+          {Object.entries(THEMES).map(([key, t]) => (
+            <button
+              key={key}
+              onClick={() => {
+                onThemeChange(key);
+                setOpen(false);
+              }}
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-zinc-200 hover:bg-zinc-900 transition-colors"
+            >
+              <span className="w-3 h-3 rounded-full shrink-0 ring-1 ring-white/20" style={{ backgroundColor: t.base }} />
+              <span className="flex-1 text-left">{t.label}</span>
+              {theme === key && <CheckIcon className={`accent-text shrink-0`} />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TopNav({ activeNav, onNavChange, wallet, onOpenWalletModal, paperMode, paperWallet, searchQuery, onSearchChange, theme, onThemeChange, accent }) {
   return (
     <header className="sticky top-0 z-20 border-b border-zinc-800 bg-black/95 backdrop-blur">
-      <div className="flex items-center gap-6 px-5 py-3">
-        <button onClick={() => onNavChange("Discover")} className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-4 px-5 py-3">
+        <button onClick={() => onNavChange("Trending")} className="flex items-center gap-2 shrink-0">
           {/* Logo is embedded as a base64 data URI (MAVO_LOGO_DATA_URI, near
               the top of the file) so it renders with no extra asset setup.
               Swap this for a normal /logo.png path once a hosted file
@@ -888,12 +1356,12 @@ function TopNav({ activeNav, onNavChange, wallet, onOpenWalletModal }) {
           <span className="font-semibold text-lg text-zinc-100">Mavo</span>
         </button>
 
-        <nav className="hidden md:flex items-center gap-1">
+        <nav className="flex items-center gap-1 overflow-x-auto">
           {NAV_ITEMS.map((item) => (
             <button
               key={item}
               onClick={() => onNavChange(item)}
-              className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${
+              className={`px-3 py-1.5 rounded-xl text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 accent-ring-60 whitespace-nowrap ${
                 activeNav === item ? "text-zinc-100 bg-zinc-900" : "text-zinc-500 hover:text-zinc-200"
               }`}
             >
@@ -903,7 +1371,31 @@ function TopNav({ activeNav, onNavChange, wallet, onOpenWalletModal }) {
         </nav>
 
         <div className="flex items-center gap-2 ml-auto">
-          {wallet ? (
+          <div className="relative hidden sm:block w-40 md:w-64">
+            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+            {/* REPLACE WITH REAL: this filters the mock token lists by
+                name/ticker only. Looking up a pasted contract address or
+                wallet would need a real indexer/RPC call — the placeholder
+                reflects the intended scope, but that lookup isn't wired
+                up yet. */}
+            <input
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder="Search coin, CA, or wallet"
+              className={`w-full rounded-full border border-zinc-800 bg-zinc-950 pl-9 pr-3 py-1.5 text-xs text-zinc-100 placeholder-zinc-600 outline-none focus:ring-2 accent-ring-50 transition-shadow`}
+            />
+          </div>
+          {paperMode ? (
+            <button
+              onClick={() => onNavChange("Paper Trading")}
+              className="hidden sm:flex items-center gap-1.5 rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-1.5 text-xs font-mono hover:border-zinc-700 transition-colors"
+            >
+              <span className={`w-1.5 h-1.5 rounded-full accent-dot`} />
+              <span className="text-zinc-300">Practice</span>
+              <span className="text-zinc-600">·</span>
+              <span className="text-zinc-300">{paperWallet.balanceSol.toFixed(2)} SOL</span>
+            </button>
+          ) : wallet ? (
             <div className="hidden sm:flex items-center gap-1.5 rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-1.5 text-xs font-mono">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               <span className="text-zinc-300">{wallet.balanceSol.toFixed(2)} SOL</span>
@@ -911,9 +1403,10 @@ function TopNav({ activeNav, onNavChange, wallet, onOpenWalletModal }) {
               <span className="text-zinc-300">{wallet.address}</span>
             </div>
           ) : null}
+          <ThemeSwitcher theme={theme} onThemeChange={onThemeChange} />
           <button
             onClick={onOpenWalletModal}
-            className="flex items-center gap-1.5 rounded-full bg-white hover:bg-zinc-100 active:bg-zinc-200 transition-colors px-4 py-2 text-sm font-semibold text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+            className={`flex items-center gap-1.5 rounded-full accent-solid transition-colors px-4 py-2 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 accent-ring-70 focus-visible:ring-offset-2 focus-visible:ring-offset-black`}
           >
             <WalletIcon />
             {wallet ? "Wallet Connected" : "Connect Wallet"}
@@ -929,11 +1422,112 @@ function TopNav({ activeNav, onNavChange, wallet, onOpenWalletModal }) {
 --------------------------------------------------------------------------- */
 
 export default function MavoDashboard() {
-  const [activeNav, setActiveNav] = useState("Discover");
+  const [activeNav, setActiveNav] = useState("Trending");
   const [selectedId, setSelectedId] = useState(null);
   const [wallet, setWallet] = useState(null); // { address, balanceSol } | null
   const [walletModalOpen, setWalletModalOpen] = useState(false);
-  const [tradeRequest, setTradeRequest] = useState(null); // { token, side } | null
+  const [tradeRequest, setTradeRequest] = useState(null); // { token, side, quick, paper } | null
+
+  // Accent theme — chosen from the gear icon in the top nav. Defaults to
+  // yellow. `accent` is threaded down as a prop to every component that
+  // renders an accent-colored button/ring/dot, so switching it re-themes
+  // the whole UI in one place.
+  const [theme, setTheme] = useState("yellow");
+  const accent = THEMES[theme] ?? THEMES.yellow;
+
+  // Global search — lives in the top nav and filters whichever list page
+  // (Trending or Trenches) is currently active.
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Coins the user has explicitly hidden, and dev (creator) wallets the
+  // user has blacklisted — both apply everywhere a token list is rendered.
+  const [hiddenTokenIds, setHiddenTokenIds] = useState(() => new Set());
+  const [blacklistedDevWallets, setBlacklistedDevWallets] = useState(() => new Set());
+
+  function hideToken(tokenId) {
+    setHiddenTokenIds((prev) => new Set(prev).add(tokenId));
+  }
+  function blacklistDev(walletAddress) {
+    setBlacklistedDevWallets((prev) => new Set(prev).add(walletAddress));
+  }
+
+  // Practice wallet — entirely separate ledger from the connected real
+  // wallet above. Toggled on from the Paper Trading page; once on, Buy/Sell
+  // and Quick Buy everywhere (Discover cards and the token detail page)
+  // route here instead of prompting a real wallet connection.
+  const [paperMode, setPaperMode] = useState(false);
+  const [paperWallet, setPaperWallet] = useState(() => ({
+    balanceSol: 5,
+    startingBalanceSol: 5,
+    positions: {}, // tokenId -> { ticker, tokensHeld, costBasisSol }
+    trades: [], // { id, tokenId, ticker, side, amountSol, tokens, pnlSol?, pnlPct?, timestamp }
+    equityHistory: [{ t: Date.now(), equity: 5 }],
+  }));
+
+  function computeEquity(balanceSol, positions) {
+    return balanceSol + Object.entries(positions).reduce((sum, [id, p]) => {
+      const tok = MOCK_TOKENS.find((t) => t.id === id);
+      return sum + (tok ? (p.tokensHeld * tok.price) / SOL_PRICE_USD : 0);
+    }, 0);
+  }
+
+  function paperBuy(token, amountUsd) {
+    setPaperWallet((prev) => {
+      const amountSolSpent = amountUsd / SOL_PRICE_USD;
+      if (amountUsd <= 0 || amountSolSpent > prev.balanceSol) return prev;
+      const tokensBought = (amountUsd / token.price) * (1 - token.priceImpactPct / 100);
+      const existing = prev.positions[token.id] || { ticker: token.ticker, tokensHeld: 0, costBasisSol: 0 };
+      const positions = {
+        ...prev.positions,
+        [token.id]: {
+          ticker: token.ticker,
+          tokensHeld: existing.tokensHeld + tokensBought,
+          costBasisSol: existing.costBasisSol + amountSolSpent,
+        },
+      };
+      const balanceSol = prev.balanceSol - amountSolSpent;
+      const trade = { id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, tokenId: token.id, ticker: token.ticker, side: "buy", amountSol: amountSolSpent, tokens: tokensBought, timestamp: Date.now() };
+      const equity = computeEquity(balanceSol, positions);
+      return { ...prev, balanceSol, positions, trades: [trade, ...prev.trades], equityHistory: [...prev.equityHistory, { t: Date.now(), equity }] };
+    });
+  }
+
+  function paperSell(token, pct) {
+    setPaperWallet((prev) => {
+      const pos = prev.positions[token.id];
+      if (!pos || pos.tokensHeld <= 0 || pct <= 0) return prev;
+      const fraction = Math.min(100, pct) / 100;
+      const tokensSold = pos.tokensHeld * fraction;
+      const costBasisSold = pos.costBasisSol * fraction;
+      const proceedsSol = ((tokensSold * token.price) / SOL_PRICE_USD) * (1 - token.priceImpactPct / 100);
+      const pnlSol = proceedsSol - costBasisSold;
+      const pnlPct = costBasisSold > 0 ? (pnlSol / costBasisSold) * 100 : 0;
+      const remainingTokens = pos.tokensHeld - tokensSold;
+      const remainingCostBasis = pos.costBasisSol - costBasisSold;
+      const positions = { ...prev.positions };
+      if (remainingTokens <= 0.0000001) {
+        delete positions[token.id];
+      } else {
+        positions[token.id] = { ticker: pos.ticker, tokensHeld: remainingTokens, costBasisSol: remainingCostBasis };
+      }
+      const balanceSol = prev.balanceSol + proceedsSol;
+      const trade = { id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, tokenId: token.id, ticker: token.ticker, side: "sell", amountSol: proceedsSol, tokens: tokensSold, pnlSol, pnlPct, timestamp: Date.now() };
+      const equity = computeEquity(balanceSol, positions);
+      return { ...prev, balanceSol, positions, trades: [trade, ...prev.trades], equityHistory: [...prev.equityHistory, { t: Date.now(), equity }] };
+    });
+  }
+
+  // Resets the practice wallet entirely — clears positions and trade
+  // history and starts fresh at the chosen balance.
+  function fundPaperWallet(startingBalanceSol) {
+    setPaperWallet({
+      balanceSol: startingBalanceSol,
+      startingBalanceSol,
+      positions: {},
+      trades: [],
+      equityHistory: [{ t: Date.now(), equity: startingBalanceSol }],
+    });
+  }
 
   // Load Inter for a cleaner, more legible UI typeface than the OS default.
   // REPLACE WITH REAL: swap this for next/font/google's Inter loader once
@@ -958,27 +1552,37 @@ export default function MavoDashboard() {
     setSelectedId(null);
   }
 
-  // Entry point for every Buy/Sell button in the app — if no wallet is
-  // connected yet, prompt that first, then open the trade modal.
+  // Entry point for every Buy/Sell button in the app. Practice mode routes
+  // straight to the trade modal against the paper wallet — no real wallet
+  // connection needed since it's a separate balance. Otherwise, prompt a
+  // real wallet connection first if one isn't already linked.
   function handleTradeRequest(token, side) {
+    if (paperMode) {
+      setTradeRequest({ token, side, quick: false, paper: true });
+      return;
+    }
     if (!wallet) {
-      setTradeRequest({ token, side, quick: false });
+      setTradeRequest({ token, side, quick: false, paper: false });
       setWalletModalOpen(true);
       return;
     }
-    setTradeRequest({ token, side, quick: false });
+    setTradeRequest({ token, side, quick: false, paper: false });
   }
 
-  // One-tap quick buy from a coin card — same wallet-connect gate as a
-  // normal trade, but the resulting TradeModal opens in "quick" mode
-  // (preset amount, skips straight to signing).
+  // One-tap quick buy from a coin card — same routing logic as above, but
+  // the resulting TradeModal opens in "quick" mode (preset amount, skips
+  // straight to signing).
   function handleQuickBuy(token) {
+    if (paperMode) {
+      setTradeRequest({ token, side: "buy", quick: true, paper: true });
+      return;
+    }
     if (!wallet) {
-      setTradeRequest({ token, side: "buy", quick: true });
+      setTradeRequest({ token, side: "buy", quick: true, paper: false });
       setWalletModalOpen(true);
       return;
     }
-    setTradeRequest({ token, side: "buy", quick: true });
+    setTradeRequest({ token, side: "buy", quick: true, paper: false });
   }
 
   function handleWalletConnected(w) {
@@ -990,30 +1594,70 @@ export default function MavoDashboard() {
   return (
     <div
       className="min-h-screen bg-black text-zinc-100 antialiased"
-      style={{ fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}
+      style={{
+        fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+      }}
     >
-      <TopNav activeNav={activeNav} onNavChange={handleNavChange} wallet={wallet} onOpenWalletModal={() => setWalletModalOpen(true)} />
+      <AccentStyle accent={accent} />
+      <TopNav
+        activeNav={activeNav}
+        onNavChange={handleNavChange}
+        wallet={wallet}
+        onOpenWalletModal={() => setWalletModalOpen(true)}
+        paperMode={paperMode}
+        paperWallet={paperWallet}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        theme={theme}
+        onThemeChange={setTheme}
+        accent={accent}
+      />
 
       <main className="p-4 md:p-5">
-        {activeNav !== "Discover" ? (
+        {activeNav === "Paper Trading" ? (
+          <PaperTradingPage
+            paperMode={paperMode}
+            onTogglePaperMode={setPaperMode}
+            paperWallet={paperWallet}
+            onFundWallet={fundPaperWallet}
+            accent={accent}
+          />
+        ) : activeNav === "Trending" || activeNav === "Trenches" ? (
+          selectedToken ? (
+            <TokenDetail token={selectedToken} wallet={wallet} onBack={() => setSelectedId(null)} onTrade={handleTradeRequest} paperMode={paperMode} paperWallet={paperWallet} backLabel={activeNav} accent={accent} />
+          ) : activeNav === "Trenches" ? (
+            <TrenchesPage
+              newTokens={newPairs}
+              soonTokens={migrating}
+              migratedTokens={migrated}
+              onOpen={setSelectedId}
+              onQuickBuy={handleQuickBuy}
+              query={searchQuery}
+              hiddenTokenIds={hiddenTokenIds}
+              blacklistedDevWallets={blacklistedDevWallets}
+              onHide={hideToken}
+              onBlacklistDev={blacklistDev}
+              accent={accent}
+            />
+          ) : (
+            <TokenListPage
+              title={activeNav}
+              tokens={migrating}
+              onOpen={setSelectedId}
+              onQuickBuy={handleQuickBuy}
+              query={searchQuery}
+              hiddenTokenIds={hiddenTokenIds}
+              blacklistedDevWallets={blacklistedDevWallets}
+              onHide={hideToken}
+              onBlacklistDev={blacklistDev}
+              accent={accent}
+            />
+          )
+        ) : (
           <div className="rounded-2xl border border-dashed border-zinc-800 bg-zinc-950/60 p-10 text-center max-w-md mx-auto mt-10">
             <div className="text-lg font-semibold text-zinc-100 mb-1">{activeNav}</div>
             <p className="text-sm text-zinc-500">This section isn&apos;t built yet — the navigation is wired up so it can be added without reworking the rest of Mavo.</p>
           </div>
-        ) : selectedToken ? (
-          <TokenDetail token={selectedToken} wallet={wallet} onBack={() => setSelectedId(null)} onTrade={handleTradeRequest} />
-        ) : (
-          <>
-            <div className="mb-4">
-              <h1 className="text-2xl font-semibold text-zinc-100" style={{ fontFamily: '"Fredoka", sans-serif' }}>Discover</h1>
-              <p className="text-xs text-zinc-500">Find a coin, check the risk, enter an amount, buy — all without leaving Mavo. Mock data for now.</p>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <ColumnPanel title="Trenches" live tokens={newPairs} onOpen={setSelectedId} onQuickBuy={handleQuickBuy} />
-              <ColumnPanel title="Trending" live tokens={migrating} onOpen={setSelectedId} onQuickBuy={handleQuickBuy} />
-              <ColumnPanel title="Top" tokens={migrated} onOpen={setSelectedId} onQuickBuy={handleQuickBuy} />
-            </div>
-          </>
         )}
       </main>
 
@@ -1024,11 +1668,23 @@ export default function MavoDashboard() {
             setTradeRequest(null);
           }}
           onConnected={handleWalletConnected}
+          accent={accent}
         />
       )}
 
-      {!walletModalOpen && wallet && tradeRequest && (
-        <TradeModal token={tradeRequest.token} side={tradeRequest.side} wallet={wallet} onClose={() => setTradeRequest(null)} quick={tradeRequest.quick} />
+      {!walletModalOpen && tradeRequest && (tradeRequest.paper || wallet) && (
+        <TradeModal
+          token={tradeRequest.token}
+          side={tradeRequest.side}
+          wallet={wallet}
+          onClose={() => setTradeRequest(null)}
+          quick={tradeRequest.quick}
+          paper={tradeRequest.paper}
+          paperWallet={paperWallet}
+          paperBuy={paperBuy}
+          paperSell={paperSell}
+          accent={accent}
+        />
       )}
     </div>
   );
