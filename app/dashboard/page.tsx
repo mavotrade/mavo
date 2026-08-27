@@ -220,6 +220,10 @@ function buildToken(i, stage) {
   const devPct = Math.round(rand() * 8 * 10) / 10;
   const sniperPct = Math.round(rand() * 15 * 10) / 10;
   const insiderPct = Math.round(rand() * 12 * 10) / 10;
+  const bundlersPct = Math.round(rand() * 6 * 10) / 10;
+  const lpBurnedPct = Math.floor(rand() * 100);
+  const proTraders = Math.floor(rand() * 4000) + 50;
+  const dexPaid = rand() > 0.35;
 
   return {
     id: `${stage}-${i}`,
@@ -255,6 +259,10 @@ function buildToken(i, stage) {
     devPct,
     sniperPct,
     insiderPct,
+    bundlersPct,
+    lpBurnedPct,
+    proTraders,
+    dexPaid,
     watchingNow: Math.floor(rand() * 300) + 4,
     sparkline: makeSparkline(rand, priceChangePct >= 0),
     platforms,
@@ -1541,6 +1549,44 @@ function QuickTrade({ token, wallet, onTrade, paperMode, paperWallet }) {
   );
 }
 
+// Compact 3x3 grid of on-chain heuristic badges — top holder concentration,
+// dev/sniper/insider/bundler share, LP-burn status, holder count, active
+// pro-trader count, and whether the token paid for a DEX profile listing.
+// All values come from buildToken(), so every token (real or mock) has them.
+function TokenInfoPanel({ token }) {
+  const items = [
+    { label: "Top 10 H.", value: `${token.top10Pct.toFixed(2)}%`, warn: token.top10Pct > 30 },
+    { label: "Dev H.", value: `${token.devPct.toFixed(1)}%`, warn: token.devPct > 5 },
+    { label: "Snipers H.", value: `${token.sniperPct.toFixed(1)}%`, warn: token.sniperPct > 5 },
+    { label: "Insiders", value: `${token.insiderPct.toFixed(2)}%`, warn: token.insiderPct > 5 },
+    { label: "Bundlers", value: `${token.bundlersPct.toFixed(2)}%`, warn: token.bundlersPct > 3 },
+    { label: "LP Burned", value: `${token.lpBurnedPct}%`, positive: token.lpBurnedPct >= 50, warn: token.lpBurnedPct < 50 },
+    { label: "Holders", value: fmtHolders(token.holders) },
+    { label: "Pro Traders", value: `${token.proTraders}` },
+    { label: "Dex Paid", value: token.dexPaid ? "Paid" : "Unpaid", positive: token.dexPaid, warn: !token.dexPaid },
+  ];
+
+  return (
+    <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
+      <div className="text-xs text-zinc-500 uppercase tracking-wide mb-3">Token info</div>
+      <div className="grid grid-cols-3 gap-2.5">
+        {items.map((it) => (
+          <div key={it.label} className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-2.5 text-center">
+            <div
+              className={`text-sm font-semibold font-mono ${
+                it.warn ? "text-rose-400" : it.positive ? "text-emerald-400" : "text-zinc-100"
+              }`}
+            >
+              {it.value}
+            </div>
+            <div className="mt-0.5 text-[10px] text-zinc-500 leading-tight">{it.label}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function TokenDetail({ token, wallet, onBack, onTrade, paperMode, paperWallet, backLabel = "Trending", accent }) {
   const stageLabel = token.stage === "new" ? "New pair" : token.stage === "migrating" ? "Migrating" : "Migrated";
 
@@ -1645,8 +1691,9 @@ function TokenDetail({ token, wallet, onBack, onTrade, paperMode, paperWallet, b
           </div>
         </div>
 
-        <div className="min-w-0 xl:sticky xl:top-20 xl:self-start">
+        <div className="min-w-0 xl:sticky xl:top-20 xl:self-start space-y-4">
           <QuickTrade token={token} wallet={wallet} onTrade={onTrade} paperMode={paperMode} paperWallet={paperWallet} />
+          <TokenInfoPanel token={token} />
         </div>
       </div>
     </div>
