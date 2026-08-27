@@ -264,7 +264,23 @@ function buildToken(i, stage) {
   };
 }
 
+// Real, actually-listed tokens — these get the genuine TradingView chart
+// instead of the mock sparkline (see lib/resolveTradingViewSymbol.ts).
+const REAL_TOKENS = [
+  { name: "Solana", ticker: "SOL" },
+  { name: "Dogecoin", ticker: "DOGE" },
+  { name: "Bonk", ticker: "BONK" },
+  { name: "dogwifhat", ticker: "WIF" },
+  { name: "Pepe", ticker: "PEPE" },
+].map((t, i) => ({
+  ...buildToken(1000 + i, "migrated"),
+  id: `real-${t.ticker.toLowerCase()}`,
+  name: t.name,
+  ticker: t.ticker,
+}));
+
 const MOCK_TOKENS = [
+  ...REAL_TOKENS,
   ...Array.from({ length: 8 }, (_, i) => buildToken(i, "new")),
   ...Array.from({ length: 6 }, (_, i) => buildToken(i + 8, "migrating")),
   ...Array.from({ length: 6 }, (_, i) => buildToken(i + 14, "migrated")),
