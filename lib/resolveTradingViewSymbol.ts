@@ -3,7 +3,13 @@ export interface ResolvableToken {
   [key: string]: unknown;
 }
 
-const TICKER_TO_TV_SYMBOL: Record<string, string> = {};
+const TICKER_TO_TV_SYMBOL: Record<string, string> = {
+  SOL: "COINBASE:SOLUSD",
+  DOGE: "COINBASE:DOGEUSD",
+  BONK: "COINBASE:BONKUSD",
+  WIF: "COINBASE:WIFUSD",
+  PEPE: "COINBASE:PEPEUSD",
+};
 
 export function resolveTradingViewSymbol(token: ResolvableToken): string | null {
   if (!token?.ticker) return null;
